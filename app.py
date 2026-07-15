@@ -19,7 +19,7 @@ def limpar_tudo():
     st.session_state.codigos = ""
     st.rerun()
 
-# Interface
+# Interface de Coleta
 st.subheader("Nova Coleta")
 col1, col2 = st.columns(2)
 
@@ -45,7 +45,6 @@ with col_btn_processar:
             for linha in linhas:
                 codigo = linha.strip()
                 if not codigo: continue
-                # Mantém o código como string pura (preserva zeros)
                 lista_processada.append(str(codigo))
             
             df = pd.DataFrame(lista_processada, columns=['Codigo Material'])
@@ -56,7 +55,7 @@ with col_btn_processar:
             df.to_csv(ARQUIVO_HISTORICO, mode='a', index=False, header=header)
             
             st.success("Coleta processada!")
-            st.session_state.codigos = "" # Limpa apenas os códigos
+            st.session_state.codigos = ""
             st.rerun()
 
 with col_btn_limpar:
@@ -78,9 +77,12 @@ if os.path.exists(ARQUIVO_HISTORICO):
         st.download_button("📥 BAIXAR TUDO (CSV)", csv_total, "historico_completo.csv", "text/csv")
         
     with col_dl2:
-        # Exportação em TXT (cada código em uma linha, sem aspas, sem títulos)
-        txt_codigos = "\n".join(df_total['Codigo Material'].astype(str))
-        st.download_button("📥 BAIXAR SÓ CÓDIGOS (TXT)", txt_codigos, "codigos.txt", "text/plain")
+        # TRUQUE PARA EXCEL: Adiciona ="" na frente para manter o zero e tratar como texto
+        df_excel = df_total[['Codigo Material']].copy()
+        df_excel['Codigo Material'] = '="' + df_excel['Codigo Material'].astype(str) + '"'
+        
+        csv_excel = df_excel.to_csv(index=False, header=False, sep=';', quoting=0).encode('utf-8')
+        st.download_button("📥 BAIXAR P/ EXCEL (MANTÉM ZEROS)", csv_excel, "codigos_para_excel.csv", "text/csv")
     
     with col_del:
         if st.button("❌ APAGAR TUDO"):
