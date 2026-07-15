@@ -17,14 +17,12 @@ def limpar_tudo():
     st.session_state.codigos = ""
     st.rerun()
 
-# --- ÁREA 1: COLETA ATUAL ---
 st.subheader("Nova Coleta")
 col1, col2 = st.columns(2)
 
 nome = col1.text_input("Colaborador:", key="nome_input", value=st.session_state.nome)
 rack = col2.text_input("Rack:", key="rack_input", value=st.session_state.rack)
 
-st.info("💡 Dica: Pule uma linha (Enter) para registrar uma posição vazia.")
 codigos = st.text_area("Bipe os códigos:", height=200, key="codigos_input", value=st.session_state.codigos)
 
 st.session_state.nome = nome
@@ -63,12 +61,11 @@ with col_btn_processar:
             limpar_tudo() 
 
 with col_btn_limpar:
-    if st.button("Limpar Tela (Nova Coleta)"):
+    if st.button("Limpar Tela"):
         limpar_tudo()
 
 st.divider()
 
-# --- ÁREA 2: HISTÓRICO ---
 st.subheader("📊 Histórico de Coletas")
 if os.path.exists(ARQUIVO_HISTORICO):
     df_total = pd.read_csv(ARQUIVO_HISTORICO, dtype={'Codigo Material': str})
@@ -79,13 +76,15 @@ if os.path.exists(ARQUIVO_HISTORICO):
     
     with col_dl1:
         csv_total = df_total.to_csv(index=False, quoting=1).encode('utf-8')
-        st.download_button("📥 BAIXAR TUDO", csv_total, "historico_completo.csv", "text/csv")
+        st.download_button("📥 BAIXAR TUDO", csv_total, "historico.csv", "text/csv")
         
     with col_dl2:
-        # AQUI ESTÁ O AJUSTE: quoting=0 remove as aspas e o arquivo sai como texto puro
+        # AQUI A CORREÇÃO: formato de texto puro sem aspas, mas garantindo que o CSV 
+        # trate a coluna como string para não remover zeros.
         df_codigos = df_total[['Codigo Material']]
+        # Adicionamos um tab (\t) antes do código se necessário, mas o CSV puro costuma bastar:
         csv_codigos = df_codigos.to_csv(index=False, header=False, quoting=0).encode('utf-8')
-        st.download_button("📥 BAIXAR SÓ CÓDIGOS", csv_codigos, "apenas_codigos.csv", "text/csv")
+        st.download_button("📥 BAIXAR SÓ CÓDIGOS", csv_codigos, "codigos.csv", "text/csv")
     
     with col_del:
         if st.button("❌ APAGAR TUDO"):
