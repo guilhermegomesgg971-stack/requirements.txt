@@ -82,8 +82,9 @@ if os.path.exists(ARQUIVO_HISTORICO):
         st.download_button("📥 BAIXAR TUDO", csv_total, "historico_completo.csv", "text/csv")
         
     with col_dl2:
+        # AQUI ESTÁ O AJUSTE: quoting=0 remove as aspas e o arquivo sai como texto puro
         df_codigos = df_total[['Codigo Material']]
-        csv_codigos = df_codigos.to_csv(index=False, header=False, quoting=1).encode('utf-8')
+        csv_codigos = df_codigos.to_csv(index=False, header=False, quoting=0).encode('utf-8')
         st.download_button("📥 BAIXAR SÓ CÓDIGOS", csv_codigos, "apenas_codigos.csv", "text/csv")
     
     with col_del:
