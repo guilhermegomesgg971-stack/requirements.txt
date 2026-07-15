@@ -2,13 +2,11 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Configuração da página
 st.set_page_config(page_title="Coletor de Rack", layout="wide")
 st.title("📱 Coletor de Rack")
 
 ARQUIVO_HISTORICO = "coletas_do_dia.csv"
 
-# Inicialização do estado
 if 'nome' not in st.session_state: st.session_state.nome = ""
 if 'rack' not in st.session_state: st.session_state.rack = ""
 if 'codigos' not in st.session_state: st.session_state.codigos = ""
@@ -19,7 +17,6 @@ def limpar_tudo():
     st.session_state.codigos = ""
     st.rerun()
 
-# Interface de Coleta
 st.subheader("Nova Coleta")
 col1, col2 = st.columns(2)
 
@@ -45,7 +42,11 @@ with col_btn_processar:
             for linha in linhas:
                 codigo = linha.strip()
                 if not codigo: continue
-                lista_processada.append(str(codigo))
+                # EXTRAÇÃO: Pega apenas do 7º ao 12º caractere (os 5 centrais)
+                if len(codigo) >= 12:
+                    lista_processada.append(str(codigo[7:12]))
+                else:
+                    lista_processada.append(str(codigo))
             
             df = pd.DataFrame(lista_processada, columns=['Codigo Material'])
             df.insert(0, 'Rack', st.session_state.rack)
@@ -64,7 +65,6 @@ with col_btn_limpar:
 
 st.divider()
 
-# Histórico e Exportação
 st.subheader("📊 Histórico de Coletas")
 if os.path.exists(ARQUIVO_HISTORICO):
     df_total = pd.read_csv(ARQUIVO_HISTORICO, dtype={'Codigo Material': str})
@@ -77,7 +77,7 @@ if os.path.exists(ARQUIVO_HISTORICO):
         st.download_button("📥 BAIXAR TUDO (CSV)", csv_total, "historico_completo.csv", "text/csv")
         
     with col_dl2:
-        # TRUQUE PARA EXCEL: Adiciona ="" na frente para manter o zero e tratar como texto
+        # Mantém a formatação para o Excel não deletar os zeros
         df_excel = df_total[['Codigo Material']].copy()
         df_excel['Codigo Material'] = '="' + df_excel['Codigo Material'].astype(str) + '"'
         
