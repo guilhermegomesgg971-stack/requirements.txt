@@ -10,7 +10,6 @@ st.title("📱 Coletor de Rack")
 
 ARQUIVO_HISTORICO = "coletas_do_dia.csv"
 
-# Inicialização do estado
 if 'nome' not in st.session_state: st.session_state.nome = ""
 if 'rack' not in st.session_state: st.session_state.rack = ""
 if 'codigos' not in st.session_state: st.session_state.codigos = ""
@@ -42,18 +41,13 @@ with col_btn_processar:
             
             for linha in linhas:
                 codigo_raw = linha.strip()
-                # Extração: 7º ao 12º caractere
-                codigo_extraido = str(codigo_raw[6:11]) if len(codigo_raw) >= 12 else str(codigo_raw)
+                # Extrai apenas o que for número puro
+                codigo_final = str(codigo_raw[6:11]) if len(codigo_raw) >= 12 else str(codigo_raw)
                 
-                if not codigo_raw:
-                    codigo_final = "SEM CÓDIGO"
-                else:
-                    codigo_final = codigo_extraido
-                
-                dados_processados.append({
-                    'Nr Rack': st.session_state.rack,
-                    'Codigo Material': codigo_final
-                })
+                if codigo_raw:
+                    dados_processados.append({
+                        'Codigo Material': codigo_final
+                    })
             
             df = pd.DataFrame(dados_processados)
             header = not os.path.exists(ARQUIVO_HISTORICO)
@@ -74,29 +68,14 @@ if os.path.exists(ARQUIVO_HISTORICO):
     df_total = pd.read_csv(ARQUIVO_HISTORICO)
     st.dataframe(df_total, use_container_width=True)
     
-    col_dl1, col_dl2, col_del = st.columns(3)
-    
-    with col_dl1:
-        csv_total = df_total.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 BAIXAR TUDO (CSV)", csv_total, "historico_completo.csv", "text/csv")
-        
-    with col_dl2:
-        df_export = df_total.copy()
-        # ADIÇÃO DO APÓSTROFO: Isso força o sistema a ler como texto "05219" e não como número 5219
-        df_export['Codigo Material'] = "'" + df_export['Codigo Material'].astype(str)
-        
-        # Exporta como CSV padrão que o VD+ deve aceitar
-        csv_puro = df_export.to_csv(index=True, sep=';', encoding='utf-8-sig')
+    with st.columns(3)[1]:
+        # EXPORTAÇÃO "ULTRA SIMPLES"
+        # Sem cabeçalho, sem aspas, sem apóstrofo
+        csv_puro = df_total[['Codigo Material']].to_csv(index=False, header=False, sep=';', encoding='utf-8-sig', quoting=csv.QUOTE_NONE)
         
         st.download_button(
-            label="📥 BAIXAR P/ SISTEMA (FIXO)", 
+            label="📥 BAIXAR P/ SISTEMA (LAYOUT SIMPLES)", 
             data=csv_puro.encode('utf-8-sig'), 
-            file_name="importacao_vd_corrigida.csv", 
+            file_name="importacao_vd_simples.csv", 
             mime="text/csv"
         )
-    
-    with col_del:
-        if st.button("❌ APAGAR TUDO"):
-            if os.path.exists(ARQUIVO_HISTORICO):
-                os.remove(ARQUIVO_HISTORICO)
-                st.rerun()
