@@ -8,20 +8,15 @@ st.title("💄 Coletor de Maquiagem - Bipagem Automática")
 ARQUIVO_HISTORICO = "coletas_final.csv"
 COLUNAS = [chr(i) for i in range(65, 91)] + ["AA"]
 
-# Inicialização do estado
 if 'linha' not in st.session_state: st.session_state.linha = 1
 if 'col_idx' not in st.session_state: st.session_state.col_idx = 0
 
 def processar_bipagem():
     cod_raw = st.session_state.bipagem.strip()
     if cod_raw:
-        # Extração mantida como você definiu
         cod_limpo = cod_raw[6:11] if len(cod_raw) >= 12 else cod_raw
-        
-        # Lógica de alerta para zero à esquerda
         status = "ALERTA" if cod_limpo.startswith('0') else "OK"
         
-        # Salva a linha no CSV com a coluna Status
         df_novo = pd.DataFrame([{
             'Linha': st.session_state.linha,
             'Coluna': COLUNAS[st.session_state.col_idx],
@@ -31,18 +26,14 @@ def processar_bipagem():
         header = not os.path.exists(ARQUIVO_HISTORICO)
         df_novo.to_csv(ARQUIVO_HISTORICO, mode='a', index=False, header=header, encoding='utf-8-sig')
         
-        # Avança a posição automaticamente
         st.session_state.col_idx += 1
         if st.session_state.col_idx >= len(COLUNAS):
             st.session_state.col_idx = 0
             st.session_state.linha += 1
             
-    # Limpa o campo para o próximo bip logo em seguida
     st.session_state.bipagem = ""
 
 st.subheader(f"📍 Próxima posição: Linha {st.session_state.linha} | Coluna {COLUNAS[st.session_state.col_idx]}")
-
-# O campo processa e limpa instantaneamente
 st.text_input("Bipe o código:", key="bipagem", on_change=processar_bipagem)
 
 st.divider()
@@ -50,12 +41,13 @@ st.divider()
 if os.path.exists(ARQUIVO_HISTORICO):
     df = pd.read_csv(ARQUIVO_HISTORICO)
     
-    # Aplica o destaque em vermelho para linhas com alerta
-    def estilo_alerta(row):
-        return ['background-color: #ffcccc' if row['Status'] == 'ALERTA' else '' for _ in row]
-    
-    st.write("Últimos itens coletados:")
-    st.dataframe(df.tail(15).style.apply(estilo_alerta, axis=1), use_container_width=True)
+    # CORREÇÃO: Verifica se a coluna Status existe antes de aplicar o estilo
+    if 'Status' in df.columns:
+        def estilo_alerta(row):
+            return ['background-color: #ffcccc' if row.get('Status') == 'ALERTA' else '' for _ in row]
+        st.dataframe(df.tail(15).style.apply(estilo_alerta, axis=1), use_container_width=True)
+    else:
+        st.dataframe(df.tail(15), use_container_width=True)
     
     csv_data = df.to_csv(index=False, sep=';', encoding='utf-8-sig')
     st.download_button("📥 BAIXAR ARQUIVO FINAL", csv_data, "importacao_maquiagem.csv", "text/csv")
