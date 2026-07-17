@@ -14,13 +14,16 @@ if 'col_idx' not in st.session_state: st.session_state.col_idx = 0
 def processar_bipagem():
     cod_raw = st.session_state.bipagem.strip()
     if cod_raw:
+        # Extração mantida, agora SEM o apóstrofo
         cod_limpo = cod_raw[6:11] if len(cod_raw) >= 12 else cod_raw
+        
         status = "ALERTA" if cod_limpo.startswith('0') else "OK"
         
+        # Salva o código puro (sem o apóstrofo)
         df_novo = pd.DataFrame([{
             'Linha': st.session_state.linha,
             'Coluna': COLUNAS[st.session_state.col_idx],
-            'Codigo': "'" + cod_limpo,
+            'Codigo': cod_limpo,
             'Status': status
         }])
         header = not os.path.exists(ARQUIVO_HISTORICO)
@@ -41,7 +44,7 @@ st.divider()
 if os.path.exists(ARQUIVO_HISTORICO):
     df = pd.read_csv(ARQUIVO_HISTORICO)
     
-    # CORREÇÃO: Verifica se a coluna Status existe antes de aplicar o estilo
+    # Exibe a tabela com destaque se houver alerta
     if 'Status' in df.columns:
         def estilo_alerta(row):
             return ['background-color: #ffcccc' if row.get('Status') == 'ALERTA' else '' for _ in row]
@@ -49,6 +52,7 @@ if os.path.exists(ARQUIVO_HISTORICO):
     else:
         st.dataframe(df.tail(15), use_container_width=True)
     
+    # Exportação limpa, garantindo formato texto puro
     csv_data = df.to_csv(index=False, sep=';', encoding='utf-8-sig')
     st.download_button("📥 BAIXAR ARQUIVO FINAL", csv_data, "importacao_maquiagem.csv", "text/csv")
 
