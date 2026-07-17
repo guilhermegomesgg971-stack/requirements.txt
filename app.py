@@ -9,7 +9,6 @@ st.title("📱 Coletor de Rack")
 
 ARQUIVO_HISTORICO = "coletas_do_dia.csv"
 
-# Inicialização do estado
 if 'nome' not in st.session_state: st.session_state.nome = ""
 if 'rack' not in st.session_state: st.session_state.rack = ""
 if 'codigos' not in st.session_state: st.session_state.codigos = ""
@@ -41,10 +40,7 @@ with col_btn_processar:
             
             for linha in linhas:
                 codigo_raw = linha.strip()
-                if not codigo_raw:
-                    codigo_final = "SEM CÓDIGO"
-                else:
-                    codigo_final = str(codigo_raw[7:12]) if len(codigo_raw) >= 12 else str(codigo_raw)
+                codigo_final = "SEM CÓDIGO" if not codigo_raw else (str(codigo_raw[7:12]) if len(codigo_raw) >= 12 else str(codigo_raw))
                 
                 dados_processados.append({
                     'Data': datetime.now().strftime("%d/%m/%Y"),
@@ -55,6 +51,7 @@ with col_btn_processar:
                 })
             
             df = pd.DataFrame(dados_processados)
+            # Salva o arquivo interno sempre com vírgula para evitar erros de leitura
             header = not os.path.exists(ARQUIVO_HISTORICO)
             df.to_csv(ARQUIVO_HISTORICO, mode='a', index=False, header=header, encoding='utf-8-sig')
             
@@ -70,6 +67,7 @@ st.divider()
 
 st.subheader("📊 Histórico de Coletas")
 if os.path.exists(ARQUIVO_HISTORICO):
+    # Lendo o arquivo interno com o padrão (vírgula)
     df_total = pd.read_csv(ARQUIVO_HISTORICO)
     st.dataframe(df_total, use_container_width=True)
     
@@ -80,11 +78,11 @@ if os.path.exists(ARQUIVO_HISTORICO):
         st.download_button("📥 BAIXAR TUDO (CSV)", csv_total, "historico_completo.csv", "text/csv")
         
     with col_dl2:
-        # Exportação pura para o sistema (sem aspas ou =), mas mantendo o formato de texto via encoding
-        csv_data = df_total.to_csv(index=False, sep=';', encoding='utf-8-sig')
+        # Exportação específica para a planilha base (usando ponto e vírgula)
+        csv_excel = df_total.to_csv(index=False, sep=';', encoding='utf-8-sig')
         st.download_button(
             label="📥 BAIXAR P/ EXCEL (BASE)", 
-            data=csv_data.encode('utf-8-sig'), 
+            data=csv_excel.encode('utf-8-sig'), 
             file_name="importacao_base_vd.csv", 
             mime="text/csv"
         )
