@@ -42,16 +42,16 @@ with col_btn_processar:
             
             for linha in linhas:
                 codigo_raw = linha.strip()
-                # Extração: 7º ao 12º (índices 6 a 11) ou código bruto
-                codigo_final = str(codigo_raw[6:11]) if len(codigo_raw) >= 12 else str(codigo_raw)
+                # Extração: 7º ao 12º caractere
+                codigo_extraido = str(codigo_raw[6:11]) if len(codigo_raw) >= 12 else str(codigo_raw)
+                
                 if not codigo_raw:
                     codigo_final = "SEM CÓDIGO"
+                else:
+                    codigo_final = codigo_extraido
                 
                 dados_processados.append({
-                    'Data': datetime.now().strftime("%d/%m/%Y"),
-                    'Hora': datetime.now().strftime("%H:%M:%S"),
-                    'Colaborador': st.session_state.nome,
-                    'Rack': st.session_state.rack,
+                    'Nr Rack': st.session_state.rack,
                     'Codigo Material': codigo_final
                 })
             
@@ -81,19 +81,17 @@ if os.path.exists(ARQUIVO_HISTORICO):
         st.download_button("📥 BAIXAR TUDO (CSV)", csv_total, "historico_completo.csv", "text/csv")
         
     with col_dl2:
-        # Exportação PURA para o sistema (sem aspas, sem cabeçalho)
-        df_base = df_total[['Codigo Material']].copy()
+        df_export = df_total.copy()
+        # ADIÇÃO DO APÓSTROFO: Isso força o sistema a ler como texto "05219" e não como número 5219
+        df_export['Codigo Material'] = "'" + df_export['Codigo Material'].astype(str)
         
-        # Garante o formato de 5 dígitos para manter o zero à esquerda
-        df_base['Codigo Material'] = df_base['Codigo Material'].astype(str).str.zfill(5)
-        
-        # Gera o CSV sem cabeçalho e sem aspas
-        csv_puro = df_base.to_csv(index=False, header=False, sep=';', encoding='utf-8-sig', quoting=csv.QUOTE_NONE)
+        # Exporta como CSV padrão que o VD+ deve aceitar
+        csv_puro = df_export.to_csv(index=True, sep=';', encoding='utf-8-sig')
         
         st.download_button(
-            label="📥 BAIXAR P/ SISTEMA (DIRETO)", 
+            label="📥 BAIXAR P/ SISTEMA (FIXO)", 
             data=csv_puro.encode('utf-8-sig'), 
-            file_name="importacao_direta.csv", 
+            file_name="importacao_vd_corrigida.csv", 
             mime="text/csv"
         )
     
