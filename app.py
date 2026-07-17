@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import csv
 from datetime import datetime
 
 # Configuração da página
@@ -9,6 +10,7 @@ st.title("📱 Coletor de Rack")
 
 ARQUIVO_HISTORICO = "coletas_do_dia.csv"
 
+# Inicialização do estado
 if 'nome' not in st.session_state: st.session_state.nome = ""
 if 'rack' not in st.session_state: st.session_state.rack = ""
 if 'codigos' not in st.session_state: st.session_state.codigos = ""
@@ -40,7 +42,10 @@ with col_btn_processar:
             
             for linha in linhas:
                 codigo_raw = linha.strip()
-                codigo_final = "SEM CÓDIGO" if not codigo_raw else (str(codigo_raw[7:12]) if len(codigo_raw) >= 12 else str(codigo_raw))
+                # Extração: 7º ao 12º (índices 6 a 11) ou código bruto
+                codigo_final = str(codigo_raw[6:11]) if len(codigo_raw) >= 12 else str(codigo_raw)
+                if not codigo_raw:
+                    codigo_final = "SEM CÓDIGO"
                 
                 dados_processados.append({
                     'Data': datetime.now().strftime("%d/%m/%Y"),
@@ -51,7 +56,6 @@ with col_btn_processar:
                 })
             
             df = pd.DataFrame(dados_processados)
-            # Salva o arquivo interno sempre com vírgula para evitar erros de leitura
             header = not os.path.exists(ARQUIVO_HISTORICO)
             df.to_csv(ARQUIVO_HISTORICO, mode='a', index=False, header=header, encoding='utf-8-sig')
             
@@ -67,7 +71,6 @@ st.divider()
 
 st.subheader("📊 Histórico de Coletas")
 if os.path.exists(ARQUIVO_HISTORICO):
-    # Lendo o arquivo interno com o padrão (vírgula)
     df_total = pd.read_csv(ARQUIVO_HISTORICO)
     st.dataframe(df_total, use_container_width=True)
     
@@ -78,12 +81,19 @@ if os.path.exists(ARQUIVO_HISTORICO):
         st.download_button("📥 BAIXAR TUDO (CSV)", csv_total, "historico_completo.csv", "text/csv")
         
     with col_dl2:
-        # Exportação específica para a planilha base (usando ponto e vírgula)
-        csv_excel = df_total.to_csv(index=False, sep=';', encoding='utf-8-sig')
+        # Exportação PURA para o sistema (sem aspas, sem cabeçalho)
+        df_base = df_total[['Codigo Material']].copy()
+        
+        # Garante o formato de 5 dígitos para manter o zero à esquerda
+        df_base['Codigo Material'] = df_base['Codigo Material'].astype(str).str.zfill(5)
+        
+        # Gera o CSV sem cabeçalho e sem aspas
+        csv_puro = df_base.to_csv(index=False, header=False, sep=';', encoding='utf-8-sig', quoting=csv.QUOTE_NONE)
+        
         st.download_button(
-            label="📥 BAIXAR P/ EXCEL (BASE)", 
-            data=csv_excel.encode('utf-8-sig'), 
-            file_name="importacao_base_vd.csv", 
+            label="📥 BAIXAR P/ SISTEMA (DIRETO)", 
+            data=csv_puro.encode('utf-8-sig'), 
+            file_name="importacao_direta.csv", 
             mime="text/csv"
         )
     
