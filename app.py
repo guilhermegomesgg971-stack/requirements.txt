@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="Coletor Automático", layout="wide")
-st.title("💄 Coletor de Maquiagem - Alerta de Zeros")
+st.title("💄 Coletor de Maquiagem - Bipagem Completa")
 
 ARQUIVO_HISTORICO = "coletas_final.csv"
 COLUNAS = [chr(i) for i in range(65, 91)] + ["AA"]
@@ -14,12 +14,13 @@ if 'col_idx' not in st.session_state: st.session_state.col_idx = 0
 def processar_bipagem():
     cod_raw = st.session_state.bipagem.strip()
     if cod_raw:
-        cod_limpo = cod_raw[6:11] if len(cod_raw) >= 12 else cod_raw
+        # CÓDIGO COMPLETO: removi o fatiamento [6:11]
+        cod_limpo = cod_raw
         
         # Verifica se começa com zero
         status = "ALERTA: ZERO À ESQUERDA" if cod_limpo.startswith('0') else "OK"
         
-        # Código sem o apóstrofo
+        # Salva o código puro
         df_novo = pd.DataFrame([{
             'Linha': st.session_state.linha,
             'Coluna': COLUNAS[st.session_state.col_idx],
@@ -46,7 +47,7 @@ if os.path.exists(ARQUIVO_HISTORICO):
     
     # Função para colorir linhas em vermelho se houver alerta
     def destacar_alerta(row):
-        return ['background-color: #ffcccc' if row['Status'] == "ALERTA: ZERO À ESQUERDA" else '' for _ in row]
+        return ['background-color: #ffcccc' if row.get('Status') == "ALERTA: ZERO À ESQUERDA" else '' for _ in row]
 
     st.write("Últimos itens coletados:")
     st.dataframe(df.tail(15).style.apply(destacar_alerta, axis=1), use_container_width=True)
