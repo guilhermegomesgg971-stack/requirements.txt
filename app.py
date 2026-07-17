@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="Coletor Automático", layout="wide")
-st.title("💄 Coletor de Maquiagem - Bipagem Completa")
+st.title("💄 Coletor de Maquiagem - Conversão 5 Dígitos")
 
 ARQUIVO_HISTORICO = "coletas_final.csv"
 COLUNAS = [chr(i) for i in range(65, 91)] + ["AA"]
@@ -14,13 +14,13 @@ if 'col_idx' not in st.session_state: st.session_state.col_idx = 0
 def processar_bipagem():
     cod_raw = st.session_state.bipagem.strip()
     if cod_raw:
-        # CÓDIGO COMPLETO: removi o fatiamento [6:11]
-        cod_limpo = cod_raw
+        # Extrai 5 dígitos a partir da posição 7 (ajustado para obter 51473)
+        cod_limpo = cod_raw[7:12] if len(cod_raw) >= 12 else cod_raw
         
         # Verifica se começa com zero
         status = "ALERTA: ZERO À ESQUERDA" if cod_limpo.startswith('0') else "OK"
         
-        # Salva o código puro
+        # Salva o código convertido
         df_novo = pd.DataFrame([{
             'Linha': st.session_state.linha,
             'Coluna': COLUNAS[st.session_state.col_idx],
