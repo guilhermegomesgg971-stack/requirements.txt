@@ -18,11 +18,15 @@ def processar_bipagem():
         # Extração mantida como você definiu
         cod_limpo = cod_raw[6:11] if len(cod_raw) >= 12 else cod_raw
         
-        # Salva a linha no CSV
+        # Lógica de alerta para zero à esquerda
+        status = "ALERTA" if cod_limpo.startswith('0') else "OK"
+        
+        # Salva a linha no CSV com a coluna Status
         df_novo = pd.DataFrame([{
             'Linha': st.session_state.linha,
             'Coluna': COLUNAS[st.session_state.col_idx],
-            'Codigo': "'" + cod_limpo
+            'Codigo': "'" + cod_limpo,
+            'Status': status
         }])
         header = not os.path.exists(ARQUIVO_HISTORICO)
         df_novo.to_csv(ARQUIVO_HISTORICO, mode='a', index=False, header=header, encoding='utf-8-sig')
@@ -45,8 +49,13 @@ st.divider()
 
 if os.path.exists(ARQUIVO_HISTORICO):
     df = pd.read_csv(ARQUIVO_HISTORICO)
+    
+    # Aplica o destaque em vermelho para linhas com alerta
+    def estilo_alerta(row):
+        return ['background-color: #ffcccc' if row['Status'] == 'ALERTA' else '' for _ in row]
+    
     st.write("Últimos itens coletados:")
-    st.dataframe(df.tail(10))
+    st.dataframe(df.tail(15).style.apply(estilo_alerta, axis=1), use_container_width=True)
     
     csv_data = df.to_csv(index=False, sep=';', encoding='utf-8-sig')
     st.download_button("📥 BAIXAR ARQUIVO FINAL", csv_data, "importacao_maquiagem.csv", "text/csv")
