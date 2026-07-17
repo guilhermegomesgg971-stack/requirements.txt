@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="Coletor Automático", layout="wide")
-st.title("💄 Coletor de Maquiagem - Bipagem Automática")
+st.title("💄 Coletor de Maquiagem - Alerta de Zeros")
 
 ARQUIVO_HISTORICO = "coletas_final.csv"
 COLUNAS = [chr(i) for i in range(65, 91)] + ["AA"]
@@ -14,16 +14,15 @@ if 'col_idx' not in st.session_state: st.session_state.col_idx = 0
 def processar_bipagem():
     cod_raw = st.session_state.bipagem.strip()
     if cod_raw:
-        # Extração mantida, agora SEM o apóstrofo
         cod_limpo = cod_raw[6:11] if len(cod_raw) >= 12 else cod_raw
         
-        status = "ALERTA" if cod_limpo.startswith('0') else "OK"
+        # Verifica se começa com zero
+        status = "ALERTA: ZERO À ESQUERDA" if cod_limpo.startswith('0') else "OK"
         
-        # Salva o código puro (sem o apóstrofo)
         df_novo = pd.DataFrame([{
             'Linha': st.session_state.linha,
             'Coluna': COLUNAS[st.session_state.col_idx],
-            'Codigo': cod_limpo,
+            'Codigo': "'" + cod_limpo,
             'Status': status
         }])
         header = not os.path.exists(ARQUIVO_HISTORICO)
@@ -44,15 +43,13 @@ st.divider()
 if os.path.exists(ARQUIVO_HISTORICO):
     df = pd.read_csv(ARQUIVO_HISTORICO)
     
-    # Exibe a tabela com destaque se houver alerta
-    if 'Status' in df.columns:
-        def estilo_alerta(row):
-            return ['background-color: #ffcccc' if row.get('Status') == 'ALERTA' else '' for _ in row]
-        st.dataframe(df.tail(15).style.apply(estilo_alerta, axis=1), use_container_width=True)
-    else:
-        st.dataframe(df.tail(15), use_container_width=True)
+    # Função para colorir linhas em vermelho se houver alerta
+    def destacar_alerta(row):
+        return ['background-color: #ffcccc' if row['Status'] == "ALERTA: ZERO À ESQUERDA" else '' for _ in row]
+
+    st.write("Últimos itens coletados:")
+    st.dataframe(df.tail(15).style.apply(destacar_alerta, axis=1), use_container_width=True)
     
-    # Exportação limpa, garantindo formato texto puro
     csv_data = df.to_csv(index=False, sep=';', encoding='utf-8-sig')
     st.download_button("📥 BAIXAR ARQUIVO FINAL", csv_data, "importacao_maquiagem.csv", "text/csv")
 
